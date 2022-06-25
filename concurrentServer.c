@@ -1,9 +1,5 @@
-/*
-
-First version of the server (not concurrent)
-
-*/
-
+#include <arpa/inet.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,8 +9,8 @@ First version of the server (not concurrent)
 
 #define HELLO "Hello from server"
 
-int main(int argc, char const* argv[])
-{
+int main(int argc, char const* argv[]) {
+
     // The program can be executed with either 1 or 2 parameters (port)
     // By default is 8080
     unsigned short port = 8080;
@@ -29,15 +25,23 @@ int main(int argc, char const* argv[])
         }
     }
 
-    int socket_filedescriptor, new_socket, valread;
+    int socket_filedescriptor, clientSocket, valread;
 
     // This is the data type used to represent socket addresses in the Internet namespace
     struct sockaddr_in address;
 
     int address_len = sizeof(address);
+
     int opt = 1;
 
+    pid_t pid = 0;
+
+    char * hello = "Hello from server";
+
     char buffer[1024] = { 0 };
+
+    // Initializing address structure with NULL
+	memset(&address, '\0', sizeof(address));
 
     // Initializing address structure
     // This identifies the address family or format of the socket address
@@ -55,13 +59,17 @@ int main(int argc, char const* argv[])
     if ((socket_filedescriptor = socket(PF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
+    } else {
+        printf("Server Socket has been created.\n");
     }
  
     // Reuse of local addresses for this socket
     // setsockopt is a method that set the options for the socket
-    if (setsockopt(socket_filedescriptor, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(socket_filedescriptor, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
         perror("setsockopt error");
         exit(EXIT_FAILURE);
+    } else {
+        printf("Server socket options has been set.\n");
     }
  
     // Forcefully attaching socket to the port 8080
@@ -78,31 +86,55 @@ int main(int argc, char const* argv[])
     if (listen(socket_filedescriptor, 8) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
+    } else {
+        printf("Listening...\n\n");
     }
 
-    if ((new_socket = accept(socket_filedescriptor, (struct sockaddr *) &address, (socklen_t*) &address_len)) < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
+    int nClient = 0;
+
+    while (1) {
+        if ((clientSocket = accept(socket_filedescriptor, (struct sockaddr *) &address, (socklen_t*) &address_len)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+
+        printf("Connection accepted from %s:%d\n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+
+        nClient++;
+
+        printf("Clients connected: %d\n\n", nClient);
+
+        if((pid = fork()) < 0) {
+
+            perror("fork");
+            exit(EXIT_FAILURE);
+
+        } else if(pid == 0) {
+
+            close(socket_filedescriptor);
+
+            // From here start the game itself
+            
+            if (read(clientSocket, buffer, sizeof(buffer)) < 0) {
+                perror("Reading error.\n");
+                exit(EXIT_FAILURE);
+            } else {
+                printf("%s\n", buffer);
+            }
+
+            if (write(clientSocket, HELLO, strlen(HELLO)) < 0) {
+                perror("Sending error");
+                exit(EXIT_FAILURE);
+            } else {
+                printf("Hello message sent.\n");
+            }
+            
+            close(clientSocket);
+        }
+
     }
 
-    if (recv(new_socket, buffer, sizeof(buffer), 0) == -1) {
-        perror("Reading error");
-        exit(EXIT_FAILURE);
-    }
-
-    // valread = read(new_socket, buffer, 1024);
-    printf("%s\n", buffer);
-
-    if (send(new_socket, HELLO, strlen(HELLO), 0) < 0) {
-        perror("Sending error");
-        exit(EXIT_FAILURE);
-    }
-    // send(new_socket, HELLO, strlen(HELLO), 0);
-    printf("Hello message sent\n");
-   
-    // closing the connected socket
-    close(new_socket);
-    // closing the listening socket
-    shutdown(socket_filedescriptor, SHUT_RDWR);
+    close(clientSocket);
+    close(socket_filedescriptor);
     return 0;
 }
