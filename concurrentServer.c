@@ -25,7 +25,7 @@ int main(int argc, char const* argv[]) {
         }
     }
 
-    int socket_filedescriptor, clientSocket, valread;
+    int socket_filedescriptor, newClientSocket, valread;
 
     // This is the data type used to represent socket addresses in the Internet namespace
     struct sockaddr_in address;
@@ -93,8 +93,8 @@ int main(int argc, char const* argv[]) {
     int nClient = 0;
 
     while (1) {
-        if ((clientSocket = accept(socket_filedescriptor, (struct sockaddr *) &address, (socklen_t*) &address_len)) < 0) {
-            perror("accept");
+        if ((newClientSocket = accept(socket_filedescriptor, (struct sockaddr *) &address, (socklen_t*) &address_len)) < 0) {
+            perror("Accept Error");
             exit(EXIT_FAILURE);
         }
 
@@ -106,7 +106,7 @@ int main(int argc, char const* argv[]) {
 
         if((pid = fork()) < 0) {
 
-            perror("fork");
+            perror("Fork Error");
             exit(EXIT_FAILURE);
 
         } else if(pid == 0) {
@@ -115,26 +115,28 @@ int main(int argc, char const* argv[]) {
 
             // From here start the game itself
             
-            if (read(clientSocket, buffer, sizeof(buffer)) < 0) {
+            if (read(newClientSocket, buffer, sizeof(buffer)) < 0) {
                 perror("Reading error.\n");
                 exit(EXIT_FAILURE);
             } else {
                 printf("%s\n", buffer);
             }
 
-            if (write(clientSocket, HELLO, strlen(HELLO)) < 0) {
+            if (write(newClientSocket, HELLO, strlen(HELLO)) < 0) {
                 perror("Sending error");
                 exit(EXIT_FAILURE);
             } else {
                 printf("Hello message sent.\n");
             }
             
-            close(clientSocket);
-        }
+            close(newClientSocket);
+        } else {
+            close(newClientSocket);
+        }        
 
     }
 
-    close(clientSocket);
+    close(newClientSocket);
     close(socket_filedescriptor);
     return 0;
 }

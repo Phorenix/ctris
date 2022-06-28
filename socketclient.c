@@ -18,6 +18,9 @@ int main(int argc, char const* argv[]) {
 
     struct sockaddr_in server_address;
 
+    // Initializing socket structure with NULL
+	memset(&server_address, '\0', sizeof(server_address));
+
     if (inet_pton(AF_INET, "127.0.0.1", &server_address.sin_addr) <= 0) {
         printf("Invalid address / Address not supported.\n");
         exit(EXIT_FAILURE);
@@ -39,13 +42,14 @@ int main(int argc, char const* argv[]) {
         }
     }
 
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons (port);
+
     int serverSocket, client_fd;
 
     char buffer[1024] = { 0 };
 
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons (port);
-    // server.sin_addr.s_addr = *((unsigned long *)hostnm->h_addr);
+    
 
     /* Convert IPv4 and IPv6 addresses from text to binary form
     if (inet_pton(AF_INET, serverIP, &server_address.sin_addr) <= 0) {
@@ -53,7 +57,7 @@ int main(int argc, char const* argv[]) {
         exit(EXIT_FAILURE);
     }*/
 
-    if ((serverSocket = socket(PF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((serverSocket = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         printf("Socket creation error.\n");
         exit(EXIT_FAILURE);
     } else {
@@ -67,14 +71,14 @@ int main(int argc, char const* argv[]) {
         printf("The connection has been opened.\n");
     }
 	
-    if (write(serverSocket, HELLO, strlen(HELLO)) < 0) {
+    if (send(serverSocket, HELLO, strlen(HELLO), 0) < 0) {
         perror("Sending error.\n");
         exit(EXIT_FAILURE);
     } else {
         printf("Hello message sent.\n");
     }
 
-    if (read(serverSocket, buffer, sizeof(buffer)) < 0) {
+    if (recv(serverSocket, buffer, sizeof(buffer), 0) < 0) {
         perror("Reading error.\n");
         exit(EXIT_FAILURE);
     } else {
@@ -82,8 +86,7 @@ int main(int argc, char const* argv[]) {
     }
     
     // closing the connected socket
-    // close(client_fd);
-    close(client_fd);
+    //close(client_fd);
     printf("Client Ended Successfully.\n");
     return 0;
 }
