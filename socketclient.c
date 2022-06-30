@@ -49,14 +49,6 @@ int main(int argc, char const* argv[]) {
 
     char buffer[1024] = { 0 };
 
-    
-
-    /* Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, serverIP, &server_address.sin_addr) <= 0) {
-        printf("Invalid address / Address not supported.\n");
-        exit(EXIT_FAILURE);
-    }*/
-
     if ((serverSocket = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         printf("Socket creation error.\n");
         exit(EXIT_FAILURE);
@@ -86,7 +78,8 @@ int main(int argc, char const* argv[]) {
     }
     
     // closing the connected socket
-    //close(client_fd);
+    close(client_fd);
+    close(serverSocket);
     printf("Client Ended Successfully.\n");
     return 0;
 }
