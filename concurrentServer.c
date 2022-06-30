@@ -9,6 +9,10 @@
 
 #define HELLO "Hello from server"
 
+int createListeningTCPSocket (unsigned short portArg) {
+    unsigned short port = portArg;
+}
+
 int main(int argc, char const* argv[]) {
 
     // The program can be executed with either 1 or 2 parameters (port)
@@ -25,7 +29,7 @@ int main(int argc, char const* argv[]) {
         }
     }
 
-    int socket_filedescriptor, newClientSocket, valread;
+    int socket_filedescriptor, newClientSocket;
 
     // This is the data type used to represent socket addresses in the Internet namespace
     struct sockaddr_in address;
@@ -93,6 +97,7 @@ int main(int argc, char const* argv[]) {
     int nClient = 0;
 
     while (1) {
+        
         if ((newClientSocket = accept(socket_filedescriptor, (struct sockaddr *) &address, (socklen_t*) &address_len)) < 0) {
             perror("Accept Error");
             exit(EXIT_FAILURE);
@@ -130,9 +135,8 @@ int main(int argc, char const* argv[]) {
             }
             
             close(newClientSocket);
-        } else {
-            close(newClientSocket);
-        }        
+            exit(EXIT_SUCCESS);
+        }
 
     }
 
